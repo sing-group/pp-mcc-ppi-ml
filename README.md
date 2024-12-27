@@ -32,7 +32,7 @@ To handle different embedding representations, the following combinations are of
 - **MultiplyEmbeddings**: Multiplies the values of embeddings.
 
 # Example Usage
-1. **Set up the experiment**: Edit the `EXPERIMENT CONFIGURATION` section in `analysis.py`.
+1. **Set up the experiment**: Create a configuration file with the parameter settings in the root directory of the project. Here are two possible examples, `experiment_random_split` and `experiment_unseen_protein_split`.
 2. **Run the experiment**: Use the following command to run the analysis with the selected machine learning model and, optionally, a name for the experiment log:
 
    ```bash
