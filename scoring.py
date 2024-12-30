@@ -86,8 +86,18 @@ class ProteinLevelMetrics:
 
         return df
 
-    def _score_protein(self, protein_name, df):
-        interactions = df[(df['prot1'] == protein_name)]
+    def _score_protein(self, protein_name, df, column_protein='prot1'):
+        if column_protein == 'prot1':
+            interactions = df[(df['prot1'] == protein_name)]
+        elif column_protein == 'both':
+            interactions = df[(df['prot1'] == protein_name) | (df['prot2'] == protein_name)]
+            if self.print_debug_messages:
+                prot1_interactions = df[df['prot1'] == protein_name].shape[0]
+                prot2_interactions = df[df['prot2'] == protein_name].shape[0]
+                pr_orange(f'[ProteinLevelMetrics] Protein {protein_name}: prot1 interactions = {prot1_interactions}, prot2 interactions = {prot2_interactions}')
+        else:
+            raise ValueError("Invalid value for column_protein. Use 'prot1' or 'both'.")
+        
         protein_metrics = {"num_interactions": interactions.shape[0]}
 
         y_true = interactions['y_true']
@@ -116,7 +126,7 @@ class ProteinLevelMetrics:
         protein_set = sorted(extract_protein_set(df))
 
         for protein in protein_set:
-            protein_metrics[protein] = self._score_protein(protein, df)
+            protein_metrics[protein] = self._score_protein(protein, df, column_protein='both')
 
         return protein_metrics
 
