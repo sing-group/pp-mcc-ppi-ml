@@ -202,4 +202,4 @@ class PartitionedDataset(AbstractDataset):
         if self.X_train is None or self.y_train is None:
             return f"PartitionedDataset(train_file = {self.train_file}, val_file = {self.val_file})"
         else:
-            return f"PartitionedDataset(X_train = {self.X_train.shape}, y_train = {self.y_train.shape}, train_file = {self.train_file}, val_file = {self.val_file})"
+            return f"PartitionedDataset(Train = {self.X_train_original.shape}, Validation = {self.X_val_original.shape}, train_file = {self.train_file}, val_file = {self.val_file})"

@@ -1,6 +1,5 @@
 import os
 import time 
-import numpy as np
 
 from datetime import datetime
 
@@ -9,13 +8,14 @@ import scoring as sc
 import importlib
 import sys
 
-from datasets import load_h5_as_df
-from print import pr_cyan, pr_green, pr_red, pr_yellow, pr_orange
+from print import pr_green, pr_red
+
 
 def dump_configuration(file, vars):
     with open(file, 'w', encoding='utf-8') as output_file:
         for var in vars:
             output_file.write(f'{var}={eval(var)}\n')
+
 
 def import_module(module_name):
     try:
@@ -30,9 +30,11 @@ def import_module(module_name):
     except ImportError:
         pr_red(f"Failed to import module: {module_name}")
 
+
 if len(sys.argv) < 2 or len(sys.argv) > 3:
     print("Usage: python analysis.py <configuration_module_name> [experiment_name]")
     exit(1)
+
 
 module_name = os.path.splitext(sys.argv[1])[0]
 import_module(module_name)
