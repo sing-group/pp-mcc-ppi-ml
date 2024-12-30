@@ -2,7 +2,7 @@ import os
 import math
 import numpy as np
 
-from sklearn.model_selection import StratifiedGroupKFold, StratifiedKFold, GridSearchCV
+from sklearn.model_selection import StratifiedGroupKFold, GridSearchCV
 from slugify import slugify
 
 from print import pr_orange
@@ -157,14 +157,12 @@ def filter_train_indexes(train_idx, X_tr, fold_proteins):
 
 
 def do_nested_cv(
-    X,
-    y,
+    dataset,
     model,
     param_grid,
     combinator,
     make_protein_level_splits,
     inner_splits=5,
-    outer_splits=5,
     inner_refit_scoring='f1',
     n_jobs=-1,
     print_debug_messages=False
@@ -179,8 +177,7 @@ def do_nested_cv(
     duplicated labels resulting from data augmentation techniques like adding inverted interactions.
 
     Parameters
-    - X (pandas.DataFrame): The feature matrix with protein interaction data.
-    - y (array-like): The target vector indicating the outcome of each interaction in X.
+    - dataset (AbstractDataset): The datsaet with the protein interaction data.
     - model: The machine learning estimator object from scikit-learn or a compatible library.
     - param_grid (dict or list of dicts): Dictionary with parameters names (str) as keys and lists of parameter
     settings to try as values, or a list of such dictionaries, each corresponding to a different search space.
@@ -190,8 +187,6 @@ def do_nested_cv(
     and testing sets, to mimic a more realistic scenario where the model is tested on entirely unseen proteins.
     - inner_splits (int, optional): Number of folds for the inner cross-validation loop, used for hyperparameter
     tuning. Defaults to 5.
-    - outer_splits (int, optional): Number of folds for the outer cross-validation loop, used for model evaluation.
-    Defaults to 5.
     - inner_refit_scoring (str, optional): Scoring metric for refitting the model on the entire training set within
     the inner cross-validation loop. Defaults to 'f1'.
     - n_jobs (int, optional): Number of jobs to run in parallel during the GridSearchCV phase. -1 means using all 
@@ -214,16 +209,8 @@ def do_nested_cv(
     - The `combinator` object plays a critical role in preprocessing the data, potentially handling tasks such as 
     embedding extraction and the management of duplicated labels due to data augmentation techniques.
 
-    Example:
-        >>> X = pd.DataFrame({'prot1': ['A', 'B', 'C', 'D'], 'prot2': ['E', 'F', 'G', 'H'], 'feature1': [1, 2, 3, 4], 'feature2': [5, 6, 7, 8]})
-        >>> y = np.array([0, 1, 0, 1])
-        >>> param_grid = {'C': [1, 10], 'kernel': ['linear', 'rbf']}
-        >>> combinator = SomeCombinator()
-        >>> make_protein_level_splits = True
-        >>> pred_y_folds, true_y_folds, test_indexes = do_nested_cv(X, y, model, param_grid, combinator, make_protein_level_splits)
     """
     inner_CV = StratifiedGroupKFold(n_splits=inner_splits)
-    outer_CV = StratifiedKFold(n_splits=outer_splits)
 
     pred_y_folds = []
     true_y_folds = []
@@ -233,9 +220,12 @@ def do_nested_cv(
 
     iteration = 1
     
-    for train_index, test_index in outer_CV.split(X, y):
-        print(f'\tStarting outer CV iteration {iteration} out of {outer_splits}')
+    for train_index, test_index in dataset.outer_cv():
+        print(f'\tStarting outer CV iteration {iteration} out of {dataset.outer_splits()}')
         iteration = iteration + 1
+
+        X = dataset.get_X_train_df()
+        y = dataset.get_y_train()
 
         X_tr, X_tt = X.iloc[train_index], X.iloc[test_index]
         y_tr, y_tt = y[train_index], y[test_index]
@@ -244,7 +234,7 @@ def do_nested_cv(
             X_tr, y_tr = remove_from_train(X_tr, y_tr, X_tt)
 
         if print_debug_messages:
-            pr_orange(f'\t\tOuter CV train interactions: {X_tr.shape[0]} with cv = {outer_splits}')
+            pr_orange(f'\t\tOuter CV train interactions: {X_tr.shape[0]} with cv = {dataset.outer_splits()}')
 
         X_tr_emb, groups = combinator.unpack_embeddings(X_tr)
 
